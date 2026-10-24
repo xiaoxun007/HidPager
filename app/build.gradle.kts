@@ -8,9 +8,9 @@ plugins {
 
 android {
     namespace = "com.hidpager"
-    // Miuix 0.9.0 的 miuix-ui/core/shapes-android 要求 compileSdk >= 37；
-    // AGP 已升至 8.9.1 原生支持 compileSdk 37，无需再 suppress
-    compileSdk = 37
+    // 停在 compileSdk 36 生态：Miuix 0.8.8 官方即按 compileSdk 36 构建（其 BuildConfig COMPILE_SDK=36），
+    // 而 0.9.x 拆分成的 miuix-ui/core/shapes-android 要求 compileSdk 37（需 AGP 9.x，会连锁升级 Kotlin），故降级
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.hidpager"
@@ -57,13 +57,15 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-    // ---- Compose 基础：版本与 Miuix 0.9.0 传递进来的 androidx.compose 1.10.5 对齐 ----
+    // ---- Compose 基础：版本与 Miuix 0.8.8 传递进来的 androidx.compose 1.10.5 对齐（CMP 1.10.3）----
     implementation("androidx.compose.ui:ui:1.10.5")
     implementation("androidx.compose.ui:ui-tooling-preview:1.10.5")
     debugImplementation("androidx.compose.ui:ui-tooling:1.10.5")
     // ComponentActivity.setContent { ... } 扩展
     implementation("androidx.activity:activity-compose:1.11.0")
 
-    // ---- Miuix（HyperOS 风格组件库，Android 工件）----
-    implementation("top.yukonga.miuix.kmp:miuix-ui-android:0.9.0")
+    // ---- Miuix（HyperOS 风格组件库）----
+    // 降级 0.9.0 -> 0.8.8：0.9.x 模块重构后拆为 miuix-ui-android，要求 compileSdk 37+；
+    // 0.8.8 是重构前的单一工件 miuix-android，compileSdk 36 生态稳定版，API 与 0.9.0 兼容
+    implementation("top.yukonga.miuix.kmp:miuix-android:0.8.8")
 }
