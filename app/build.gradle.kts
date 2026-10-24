@@ -19,7 +19,8 @@ android {
         versionCode = 1
         versionName = "1.0"
         // 工程 strings.xml 全部为中文（无 values-xx 多语言目录），裁剪其余语言资源
-        resConfigs = listOf("zh")
+        // Kotlin DSL 中 resConfigs 是 vararg 函数而非属性，须以函数调用形式书写
+        resConfigs("zh")
     }
 
     buildTypes {
