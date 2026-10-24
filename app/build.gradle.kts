@@ -8,9 +8,9 @@ plugins {
 
 android {
     namespace = "com.hidpager"
-    // androidx.compose 1.10.x（Miuix 0.9.0 传递依赖）的 AAR 元数据要求 compileSdk 35+，
-    // 直接取 36 一次到位；AGP 8.5.2 对“未正式测试的 compileSdk”仅告警，已在 gradle.properties 抑制
-    compileSdk = 36
+    // Miuix 0.9.0 的 miuix-ui/core/shapes-android 要求 compileSdk >= 37；
+    // AGP 已升至 8.9.1 原生支持 compileSdk 37，无需再 suppress
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.hidpager"
