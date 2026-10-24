@@ -137,3 +137,34 @@ HidPager/
 ```
 
 > 本目录树已按工程最终落地文件逐一核对，与实际结构一致；`AndroidManifest.xml`（minSdk 28 / targetSdk 34，权限与 `connectedDevice` 前台服务类型）、`HidKeys.kt`（8 字节标准键盘报表）、`MainActivity.kt`（日志区、连发开关与间隔滑条、断连仅刷新界面+日志记录）等关键实现均已对照源码修正本文表述。
+
+## 9. 媒体模式（Consumer 0x0C 页，电纸书兼容）
+
+### 9.1 适用场景
+
+部分接收端（典型如**阅星曈 X3 电纸书**）只识别蓝牙 HID 的 **Consumer Control（Usage Page 0x0C）媒体键**，对标准键盘（Usage Page 0x07）报表完全无反应——配对连上后按键全丢。本工程在描述符中追加了一段 Consumer 报表段（Report ID=0x02），可在 App 内一键切到「媒体模式」，把翻页键改发音量+/音量-/播放暂停等标准 Consumer 键，让这类接收端可用。
+
+### 9.2 键码映射表
+
+| App 界面按钮 | 键盘模式（默认，Usage Page 0x07） | 媒体模式（Usage Page 0x0C） |
+|---|---|---|
+| 上一页 | PageUp `0x4B` | Volume Increment `0xE9`（音量+） |
+| 下一页 | PageDown `0x4E` | Volume Decrement `0xEA`（音量-） |
+| 回车 | Enter `0x28` | Play/Pause `0xCD`（播放/暂停） |
+| ↑ ↓ ← → | 方向键 `0x52/0x51/0x50/0x4F` | **未映射**（媒体模式下点击提示「媒体模式下该键未映射」） |
+| 空格 | Space `0x2C` | **未映射**（同上提示） |
+
+### 9.3 阅星曈 X3 实测结论
+
+- **有效码**：该设备只响应 Consumer 0x0C 页；实测上一页=VolumeUp `0xE9`、下一页=VolumeDown `0xEA`、PlayPause `0xCD` 可唤出菜单/锁屏。
+- **配对要点**：在**设备自己的应用内菜单**里发起连接（而非系统蓝牙设置页），连上后在翻页器 App 里切到「媒体模式」即可翻页。
+- **排查**：按键无反应多半是**模式没切**（还停在键盘模式）；PlayPause 仅在阅读页内响应（系统级页面不响应）属正常。
+
+### 9.4 切换方式
+
+- 主界面：「连发设置」卡片内的**「媒体模式」开关**（默认关=键盘模式）。
+- Miuix 风格页：页面内的模式开关（与主界面服务内模式实时同步）。
+
+### 9.5 实现说明（Report ID 方案）
+
+HID 描述符中键盘段与 Consumer 段**都带 Report ID**：键盘段 `Report ID=0x01`、Consumer 段 `Report ID=0x02`。HID 规范要求「若任一报表含 Report ID，则所有报表都必须带」；两个 input 段若都不带 ID，主机会把它们视为合并逻辑报表，电纸书类接收端按描述符切分报表极易解析错乱。成熟样例（如 BleHID Simulator）均按每报表独立 Report ID，接收端按 ID 分发无歧义。键盘报表由 8 字节变为 9 字节（`0x01` 前缀 + 原 8 字节），对标准主机解析等价，键盘模式按键语义零回归。

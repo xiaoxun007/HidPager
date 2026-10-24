@@ -26,6 +26,7 @@ import com.google.android.material.slider.Slider
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.hidpager.hid.DeviceScanner
 import com.hidpager.hid.HidDeviceService
+import com.hidpager.hid.HidDeviceService.KeyMode
 import com.hidpager.hid.HidKeys
 
 class MainActivity : AppCompatActivity() {
@@ -34,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvStatus: TextView
     private lateinit var btnConnect: MaterialButton
     private lateinit var switchRepeat: SwitchMaterial
+    private lateinit var switchMediaMode: SwitchMaterial
     private lateinit var tvRepeatLabel: TextView
     private lateinit var sliderRepeat: Slider
     private lateinit var btnScan: MaterialButton
@@ -75,6 +77,8 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             svc.setRepeatIntervalMs(sliderRepeat.value.toInt())
+            // 绑定回调里同步一次按键模式（服务可能被重建后模式复位为 KEYBOARD）
+            svc.setKeyMode(if (switchMediaMode.isChecked) KeyMode.MEDIA else KeyMode.KEYBOARD)
             refreshUi()
         }
 
@@ -142,6 +146,7 @@ class MainActivity : AppCompatActivity() {
         tvStatus = findViewById(R.id.tv_status)
         btnConnect = findViewById(R.id.btn_connect)
         switchRepeat = findViewById(R.id.switch_repeat)
+        switchMediaMode = findViewById(R.id.switch_media_mode)
         tvRepeatLabel = findViewById(R.id.tv_repeat_label)
         sliderRepeat = findViewById(R.id.slider_repeat)
         btnScan = findViewById(R.id.btn_scan)
@@ -160,21 +165,28 @@ class MainActivity : AppCompatActivity() {
 
         loadBondedDevices()
 
-        // 遥控按键：单击 sendKey；长按连发由触摸监听驱动
-        bindKey(findViewById(R.id.btn_page_up), HidKeys.KEY_PAGE_UP)
-        bindKey(findViewById(R.id.btn_page_down), HidKeys.KEY_PAGE_DOWN)
-        bindKey(findViewById(R.id.btn_up), HidKeys.KEY_UP)
-        bindKey(findViewById(R.id.btn_down), HidKeys.KEY_DOWN)
-        bindKey(findViewById(R.id.btn_left), HidKeys.KEY_LEFT)
-        bindKey(findViewById(R.id.btn_right), HidKeys.KEY_RIGHT)
-        bindKey(findViewById(R.id.btn_enter), HidKeys.KEY_ENTER)
-        bindKey(findViewById(R.id.btn_space), HidKeys.KEY_SPACE)
+        // 遥控按键：单击 sendKey；长按连发由触摸监听驱动。
+        // bindKey(按钮, 键盘模式 Usage, 媒体模式 Usage=null 表示媒体模式下不映射该键)
+        bindKey(findViewById(R.id.btn_page_up), HidKeys.KEY_PAGE_UP, HidKeys.MEDIA_VOLUME_UP)
+        bindKey(findViewById(R.id.btn_page_down), HidKeys.KEY_PAGE_DOWN, HidKeys.MEDIA_VOLUME_DOWN)
+        bindKey(findViewById(R.id.btn_up), HidKeys.KEY_UP, null)
+        bindKey(findViewById(R.id.btn_down), HidKeys.KEY_DOWN, null)
+        bindKey(findViewById(R.id.btn_left), HidKeys.KEY_LEFT, null)
+        bindKey(findViewById(R.id.btn_right), HidKeys.KEY_RIGHT, null)
+        bindKey(findViewById(R.id.btn_enter), HidKeys.KEY_ENTER, HidKeys.MEDIA_PLAY_PAUSE)
+        bindKey(findViewById(R.id.btn_space), HidKeys.KEY_SPACE, null)
 
         tvRepeatLabel.text = getString(R.string.label_repeat_interval, sliderRepeat.value.toInt())
         sliderRepeat.addOnChangeListener { _, value, _ ->
             val ms = value.toInt()
             tvRepeatLabel.text = getString(R.string.label_repeat_interval, ms)
             service?.setRepeatIntervalMs(ms)
+        }
+
+        // 媒体模式开关：切换按键模式（上一页/下一页→Volume+/-，回车→PlayPause）
+        switchMediaMode.setOnCheckedChangeListener { _, isChecked ->
+            service?.setKeyMode(if (isChecked) KeyMode.MEDIA else KeyMode.KEYBOARD)
+            log(getString(if (isChecked) R.string.log_mode_media else R.string.log_mode_keyboard))
         }
 
         btnConnect.setOnClickListener {
@@ -293,23 +305,34 @@ class MainActivity : AppCompatActivity() {
 
     // ================= 按键 =================
 
-    private fun bindKey(btn: MaterialButton, usage: Int) {
-        btn.setOnClickListener {
-            val svc = service
-            if (svc == null || svc.getHidState() != 2) {
-                log(getString(R.string.log_not_connected))
-                return@setOnClickListener
+    /** 按当前模式解析本次要发送的 Usage；未连接/媒体模式未映射时给出可见提示并返回 null（不静默失败） */
+    private fun resolveUsage(keyboardUsage: Int, mediaUsage: Int?): Int? {
+        val svc = service
+        if (svc == null || svc.getHidState() != 2) {
+            log(getString(R.string.log_not_connected))
+            return null
+        }
+        return when (svc.getKeyMode()) {
+            KeyMode.MEDIA -> if (mediaUsage != null) mediaUsage else {
+                log(getString(R.string.log_media_key_unmapped))
+                null
             }
-            svc.sendKey(usage)
+            KeyMode.KEYBOARD -> keyboardUsage
+        }
+    }
+
+    private fun bindKey(btn: MaterialButton, keyboardUsage: Int, mediaUsage: Int? = null) {
+        btn.setOnClickListener {
+            val usage = resolveUsage(keyboardUsage, mediaUsage) ?: return@setOnClickListener
+            service?.sendKey(usage)
         }
         btn.setOnTouchListener { _, event ->
             if (!switchRepeat.isChecked) return@setOnTouchListener false
-            val svc = service
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    if (svc != null && svc.getHidState() == 2) svc.startRepeat(usage)
+                    resolveUsage(keyboardUsage, mediaUsage)?.let { service?.startRepeat(it) }
                 }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> svc?.stopRepeat()
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> service?.stopRepeat()
             }
             false // 返回 false，保证单击事件仍正常派发
         }

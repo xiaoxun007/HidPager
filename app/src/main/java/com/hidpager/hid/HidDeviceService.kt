@@ -72,6 +72,14 @@ class HidDeviceService : Service() {
         fun getService(): HidDeviceService = this@HidDeviceService
     }
 
+    /**
+     * 按键模式：
+     * - KEYBOARD（默认）：标准键盘 Usage Page 0x07，Report ID 0x01；
+     * - MEDIA：Consumer Control Usage Page 0x0C 媒体键（音量+/-、播放暂停），Report ID 0x02，
+     *   用于兼容只认 Consumer 媒体键的接收端（如阅星曈 X3 电纸书：键盘 HID 全丢，只认 0x0C 页）。
+     */
+    enum class KeyMode { KEYBOARD, MEDIA }
+
     companion object {
         const val ACTION_START = "com.hidpager.action.START"
         const val ACTION_STOP = "com.hidpager.action.STOP"
@@ -100,6 +108,17 @@ class HidDeviceService : Service() {
     private var repeatIntervalMs = 800
     @Volatile private var repeating = false
     @Volatile private var repeatUsage: Int = 0
+
+    // 按键模式：默认 KEYBOARD = 历史行为；MEDIA 发送 Consumer 0x0C 页报表
+    @Volatile private var keyMode: KeyMode = KeyMode.KEYBOARD
+
+    /** 切换按键模式；切换时若正在连发先停止，避免旧模式报表残留 */
+    fun setKeyMode(mode: KeyMode) {
+        if (repeating) stopRepeat()
+        keyMode = mode
+    }
+
+    fun getKeyMode(): KeyMode = keyMode
 
     private val bluetoothManager by lazy {
         getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
@@ -322,11 +341,22 @@ class HidDeviceService : Service() {
     }
 
     fun sendKeyDown(usageId: Int) {
-        sendReport(HidKeys.keyDownReport(usageId))
+        // 按当前模式选报表：键盘→Report ID 0x01 键盘报表；媒体→Report ID 0x02 Consumer 报表
+        sendReport(
+            when (keyMode) {
+                KeyMode.MEDIA -> HidKeys.makeConsumerReport(usageId)
+                KeyMode.KEYBOARD -> HidKeys.keyDownReport(usageId)
+            }
+        )
     }
 
     fun sendKeyUp(usageId: Int) {
-        sendReport(HidKeys.keyUpReport())
+        sendReport(
+            when (keyMode) {
+                KeyMode.MEDIA -> HidKeys.consumerUpReport()
+                KeyMode.KEYBOARD -> HidKeys.keyUpReport()
+            }
+        )
     }
 
     // ---------------- 长按连发 ----------------
@@ -348,7 +378,13 @@ class HidDeviceService : Service() {
         repeating = false
         handler.removeCallbacks(repeatRunnable)
         handler.removeCallbacksAndMessages(null)
-        sendReport(HidKeys.keyUpReport())
+        // 抬起报表也按当前模式选，避免连发停在旧模式残留按键状态
+        sendReport(
+            when (keyMode) {
+                KeyMode.MEDIA -> HidKeys.consumerUpReport()
+                KeyMode.KEYBOARD -> HidKeys.keyUpReport()
+            }
+        )
         log("停止连发")
     }
 

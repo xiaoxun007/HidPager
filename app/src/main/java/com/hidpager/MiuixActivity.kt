@@ -23,10 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.hidpager.hid.HidDeviceService
+import com.hidpager.hid.HidDeviceService.KeyMode
 import com.hidpager.hid.HidKeys
 import kotlinx.coroutines.delay
 import top.yukonga.miuix.kmp.basic.Button
 import top.yukonga.miuix.kmp.basic.Scaffold
+import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
@@ -46,10 +48,11 @@ class MiuixActivity : AppCompatActivity() {
 
     private var service: HidDeviceService? = null
 
-    // ---- Compose 状态：0 未注册 / 1 连接中 / 2 已连接；设备名；瞬时提示 ----
+    // ---- Compose 状态：0 未注册 / 1 连接中 / 2 已连接；设备名；瞬时提示；媒体模式开关 ----
     private var hidState by mutableIntStateOf(0)
     private var deviceName by mutableStateOf("")
     private var hint by mutableStateOf<String?>(null)
+    private var mediaMode by mutableStateOf(false)
 
     private val hidListener = object : HidDeviceService.Listener {
         override fun onHidStateChanged(state: Int, device: BluetoothDevice?) {
@@ -77,6 +80,7 @@ class MiuixActivity : AppCompatActivity() {
             svc.setListener(hidListener)
             // 绑定后先同步一次当前状态（服务由主界面启动并保持运行，这里不重复 registerHid）
             hidState = svc.getHidState()
+            mediaMode = svc.getKeyMode() == KeyMode.MEDIA
             deviceName = try {
                 svc.getConnectedDevice()?.name ?: ""
             } catch (e: SecurityException) {
@@ -88,6 +92,7 @@ class MiuixActivity : AppCompatActivity() {
             service = null
             hidState = 0
             deviceName = ""
+            mediaMode = false
         }
     }
 
@@ -121,10 +126,19 @@ class MiuixActivity : AppCompatActivity() {
                             )
                         ) {
                             Text(statusText)
-                            Button(onClick = { sendKeyOrHint(HidKeys.KEY_PAGE_UP) }) {
+                            // 当前按键模式 + 切换开关（miuix Switch，checked/onCheckedChange 两个必填参）
+                            Text(getString(if (mediaMode) R.string.mode_media else R.string.mode_keyboard))
+                            Switch(
+                                checked = mediaMode,
+                                onCheckedChange = { checked ->
+                                    mediaMode = checked
+                                    service?.setKeyMode(if (checked) KeyMode.MEDIA else KeyMode.KEYBOARD)
+                                }
+                            )
+                            Button(onClick = { sendPage(up = true) }) {
                                 Text("上一页")
                             }
-                            Button(onClick = { sendKeyOrHint(HidKeys.KEY_PAGE_DOWN) }) {
+                            Button(onClick = { sendPage(up = false) }) {
                                 Text("下一页")
                             }
                             // 瞬时操作提示（未连接等），2 秒后自动消失
@@ -142,12 +156,16 @@ class MiuixActivity : AppCompatActivity() {
         }
     }
 
-    /** 点击翻页键：仅在已连接(state==2)时真正发送；未连接给出可见提示，不静默失败 */
-    private fun sendKeyOrHint(usage: Int) {
+    /** 点击翻页：按当前模式选 Usage（键盘→PageUp/Down；媒体→Volume+/-）；未连接给出可见提示，不静默失败 */
+    private fun sendPage(up: Boolean) {
         val svc = service
         if (svc == null || svc.getHidState() != 2) {
             hint = getString(R.string.log_not_connected)
             return
+        }
+        val usage = when (svc.getKeyMode()) {
+            KeyMode.MEDIA -> if (up) HidKeys.MEDIA_VOLUME_UP else HidKeys.MEDIA_VOLUME_DOWN
+            KeyMode.KEYBOARD -> if (up) HidKeys.KEY_PAGE_UP else HidKeys.KEY_PAGE_DOWN
         }
         svc.sendKey(usage)
     }

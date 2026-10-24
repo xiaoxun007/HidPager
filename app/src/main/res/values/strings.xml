@@ -69,4 +69,12 @@
 
     <!-- Miuix 演示页：未连接提示 -->
     <string name="miuix_status_idle">未连接设备，请先回主界面连接</string>
+
+    <!-- 键盘/媒体模式切换 -->
+    <string name="switch_media_mode">媒体模式（兼容电纸书等只认 Consumer 键的接收端）</string>
+    <string name="mode_keyboard">键盘模式</string>
+    <string name="mode_media">媒体模式</string>
+    <string name="log_mode_media">已切换到媒体模式：上一页=音量+，下一页=音量-，回车=播放/暂停</string>
+    <string name="log_mode_keyboard">已切换回键盘模式</string>
+    <string name="log_media_key_unmapped">媒体模式下该键未映射</string>
 </resources>

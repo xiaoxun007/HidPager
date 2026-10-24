@@ -200,6 +200,16 @@
                     android:text="@string/switch_repeat"
                     android:textSize="15sp" />
 
+                <!-- 媒体模式开关：开启后上一页/下一页/回车改发 Consumer 0x0C 页媒体键 -->
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/switch_media_mode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:checked="false"
+                    android:text="@string/switch_media_mode"
+                    android:textSize="15sp" />
+
                 <TextView
                     android:id="@+id/tv_repeat_label"
                     android:layout_width="match_parent"
