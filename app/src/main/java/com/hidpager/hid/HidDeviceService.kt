@@ -228,7 +228,10 @@ class HidDeviceService : Service() {
             val qos = BluetoothHidDeviceAppQosSettings(
                 BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT, 0, 0, 0, 0, 0
             )
-            val ok = h.registerApp(sdp, qos, Executor { it.run() }, hidCallback)
+            // compileSdk 36 的 registerApp 真实签名为 5 参：
+            // (SdpSettings, inQos: QosSettings, outQos: QosSettings, Executor, Callback)
+            // 输入/输出两个 QosSettings 都用 BestEffort 零参数，executor 回调线程、回调对象均不变
+            val ok = h.registerApp(sdp, qos, qos, Executor { it.run() }, hidCallback)
             log("registerApp 调用结果: $ok")
             ok
         } catch (e: SecurityException) {
