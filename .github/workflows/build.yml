@@ -24,12 +24,16 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # compileSdk 37 为预览级平台，runner 镜像未预装，需用 sdkmanager 补装（显式路径，不在默认 PATH）
+      # compileSdk 37 平台在 Google SDK 仓库中的包名为 platforms;android-37.2（major.minor 命名），
+      # runner 镜像未预装，用 sdkmanager 补装（显式路径，不在默认 PATH）；
+      # AGP 按整数 compileSdk=37 查找 platforms/android-37 目录，故创建符号链接兼容
       - name: Install Android SDK platform 37
         run: |
           SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKM" --licenses >/dev/null 2>&1 || true
-          yes | "$SDKM" --channel=3 "platforms;android-37"
+          yes | "$SDKM" --channel=3 "platforms;android-37.2"
+          ln -sfn android-37.2 "$ANDROID_HOME/platforms/android-37"
+          ls -la "$ANDROID_HOME/platforms/"
 
       # 若仓库内缺 gradle-wrapper.jar（二进制无法通过 API 推送时），在此下载补齐
       - name: Ensure gradle wrapper jar
