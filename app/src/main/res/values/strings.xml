@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用与核心层引用（核心层硬编码 key，勿改名） -->
+    <string name="app_name">翻页器</string>
+    <string name="hid_notification_channel_name">翻页器后台服务</string>
+    <string name="hid_notification_channel_desc">保持翻页遥控器后台运行，用于发送按键与维护蓝牙设备连接</string>
+    <string name="hid_notification_title">翻页器运行中</string>
+    <string name="hid_notification_text">正在提供蓝牙翻页遥控服务</string>
+
+    <!-- 主界面 -->
+    <string name="title_main">翻页遥控器</string>
+    <string name="title_remote">遥控按键</string>
+    <string name="title_settings">连发设置</string>
+    <string name="title_devices">设备</string>
+    <string name="title_log">运行日志</string>
+
+    <!-- 状态区 -->
+    <string name="status_unregistered">状态：未注册</string>
+    <string name="status_connecting">状态：连接中…</string>
+    <string name="status_connected">状态：已连接：%1$s</string>
+    <string name="btn_connect">连接</string>
+    <string name="btn_disconnect">断开</string>
+
+    <!-- 遥控按键 -->
+    <string name="btn_page_up">上一页</string>
+    <string name="btn_page_down">下一页</string>
+    <string name="btn_up">↑</string>
+    <string name="btn_down">↓</string>
+    <string name="btn_left">←</string>
+    <string name="btn_right">→</string>
+    <string name="btn_enter">回车</string>
+    <string name="btn_space">空格</string>
+
+    <!-- 连发设置 -->
+    <string name="switch_repeat">长按连发</string>
+    <string name="label_repeat_interval">连发间隔：%1$d ms</string>
+
+    <!-- 设备区 -->
+    <string name="btn_scan">扫描设备</string>
+    <string name="btn_stop_scan">停止扫描</string>
+    <string name="empty_devices">暂无设备，请点击「扫描设备」</string>
+    <string name="device_unknown">(未知设备)</string>
+    <string name="badge_bonded">已配对</string>
+    <string name="badge_ble">BLE</string>
+    <string name="badge_br">BR/EDR</string>
+    <string name="btn_pair_connect">配对并连接</string>
+
+    <!-- 日志区 -->
+    <string name="btn_clear_log">清空</string>
+
+    <!-- 日志文案 -->
+    <string name="log_permission_result">权限 %1$s：%2$s</string>
+    <string name="granted">已授予</string>
+    <string name="denied">被拒绝</string>
+    <string name="log_not_connected">未连接设备，按键无效</string>
+    <string name="log_hid_register_success">HID 注册成功</string>
+    <string name="log_hid_register_failed">HID 注册失败，可能被其他应用占用或机型不支持</string>
+    <string name="log_scan_started">开始扫描设备…</string>
+    <string name="log_scan_stopped">扫描已停止</string>
+    <string name="log_scan_finished">扫描完成</string>
+    <string name="log_connecting">正在连接：%1$s</string>
+    <string name="log_disconnected">已断开连接</string>
+    <string name="log_bonding">设备未配对，正在配对：%1$s</string>
+    <string name="log_bond_success">配对成功：%1$s</string>
+    <string name="log_bond_failed">配对失败或取消：%1$s</string>
+    <string name="log_bond_init_failed">发起配对失败</string>
+    <string name="log_service_started">服务已启动</string>
+    <string name="log_error_prefix">出错：%1$s</string>
+</resources>

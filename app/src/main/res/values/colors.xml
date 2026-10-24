@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 主色：青绿色系（避开深靛蓝/紫色） -->
+    <color name="ic_launcher_background">#FF2E7D66</color>
+    <color name="colorPrimary">#FF0D7377</color>
+    <color name="colorOnPrimary">#FFFFFFFF</color>
+    <color name="colorPrimaryContainer">#FF8AD8C8</color>
+    <color name="colorOnPrimaryContainer">#FF00201A</color>
+    <color name="colorSecondary">#FF4A6360</color>
+    <color name="colorOnSecondary">#FFFFFFFF</color>
+    <color name="colorSecondaryContainer">#FFCDE8E2</color>
+    <color name="colorOnSecondaryContainer">#FF111F1D</color>
+    <color name="colorSurface">#FFFFFFFF</color>
+    <color name="colorOnSurface">#FF1A1C1C</color>
+    <color name="colorSurfaceVariant">#FFDFE5E3</color>
+    <color name="colorOnSurfaceVariant">#FF414947</color>
+    <color name="colorError">#FFBA1A1A</color>
+    <color name="window_background">#FFF4F7F6</color>
+    <color name="text_secondary">#FF5A6B69</color>
+    <color name="divider">#FFD8E0DE</color>
+</resources>
