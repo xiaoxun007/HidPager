@@ -24,11 +24,12 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # compileSdk 37 为预览级平台，runner 镜像未预装，需用 sdkmanager 补装
+      # compileSdk 37 为预览级平台，runner 镜像未预装，需用 sdkmanager 补装（显式路径，不在默认 PATH）
       - name: Install Android SDK platform 37
         run: |
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
-          yes | sdkmanager --channel=3 "platforms;android-37"
+          SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKM" --licenses >/dev/null 2>&1 || true
+          yes | "$SDKM" --channel=3 "platforms;android-37"
 
       # 若仓库内缺 gradle-wrapper.jar（二进制无法通过 API 推送时），在此下载补齐
       - name: Ensure gradle wrapper jar
