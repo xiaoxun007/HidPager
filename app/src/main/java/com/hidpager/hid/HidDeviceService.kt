@@ -26,12 +26,46 @@ import java.util.concurrent.Executor
 /**
  * 蓝牙 HID Device 前台服务：把本机伪装成标准键盘，向已配对主机发送按键报表。
  */
-class HidDeviceService : Service(), BluetoothHidDevice.Callback() {
+class HidDeviceService : Service() {
 
     interface Listener {
         /** state: 0 未注册/断开、1 连接中、2 已连接 */
         fun onHidStateChanged(state: Int, device: BluetoothDevice?)
         fun onLog(line: String)
+    }
+
+    // BluetoothHidDevice.Callback 是抽象类而非接口，Kotlin 不允许 Service() 之外再继承它；
+    // 改为内部匿名对象持有回调，回调逻辑与原本逐字一致
+    private val hidCallback = object : BluetoothHidDevice.Callback() {
+        override fun onAppStatusChanged(device: BluetoothDevice?, registered: Boolean) {
+            this@HidDeviceService.registered = registered
+            if (!registered) {
+                connectedDevice = null
+                stopRepeat()
+                publishState(0)
+            }
+            log("onAppStatusChanged registered=$registered")
+        }
+
+        override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
+            when (state) {
+                BluetoothProfile.STATE_CONNECTED -> {
+                    connectedDevice = device
+                    publishState(2)
+                    log("已连接: ${device?.name ?: device?.address}")
+                }
+                BluetoothProfile.STATE_CONNECTING -> {
+                    publishState(1)
+                    log("连接中…")
+                }
+                else -> {
+                    connectedDevice = null
+                    stopRepeat()
+                    publishState(0)
+                    log("已断开")
+                }
+            }
+        }
     }
 
     inner class LocalBinder : Binder() {
@@ -186,12 +220,15 @@ class HidDeviceService : Service(), BluetoothHidDevice.Callback() {
                 "蓝牙翻页遥控器",
                 "HidPager",
                 BluetoothHidDevice.SUBCLASS1_COMBO,
-                arrayOf(HidKeys.buildReportDescriptor())
+                HidKeys.buildReportDescriptor()
             )
+            // compileSdk 36 中该类服务类型常量名为 SERVICE_BEST_EFFORT（=1，原代码误写 QOS_BEST_EFFORT）；
+            // 且构造函数为 6 参(service, tokenRate, tokenBucketSize, peakBandwidth, latency, delayVariation)，
+            // 原代码少传 1 个参数。行为保持：BestEffort 服务类型 + 其余 QoS 参数全 0
             val qos = BluetoothHidDeviceAppQosSettings(
-                BluetoothHidDeviceAppQosSettings.QOS_BEST_EFFORT, 0, 0, 0, 0
+                BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT, 0, 0, 0, 0, 0
             )
-            val ok = h.registerApp(sdp, qos, Executor { it.run() }, this)
+            val ok = h.registerApp(sdp, qos, Executor { it.run() }, hidCallback)
             log("registerApp 调用结果: $ok")
             ok
         } catch (e: SecurityException) {
@@ -319,36 +356,4 @@ class HidDeviceService : Service(), BluetoothHidDevice.Callback() {
     fun getHidState(): Int = state
 
     fun getConnectedDevice(): BluetoothDevice? = connectedDevice
-
-    // ---------------- BluetoothHidDevice.Callback ----------------
-
-    override fun onAppStatusChanged(device: BluetoothDevice?, registered: Boolean) {
-        this.registered = registered
-        if (!registered) {
-            connectedDevice = null
-            stopRepeat()
-            publishState(0)
-        }
-        log("onAppStatusChanged registered=$registered")
-    }
-
-    override fun onConnectionStateChanged(device: BluetoothDevice?, state: Int) {
-        when (state) {
-            BluetoothProfile.STATE_CONNECTED -> {
-                connectedDevice = device
-                publishState(2)
-                log("已连接: ${device?.name ?: device?.address}")
-            }
-            BluetoothProfile.STATE_CONNECTING -> {
-                publishState(1)
-                log("连接中…")
-            }
-            else -> {
-                connectedDevice = null
-                stopRepeat()
-                publishState(0)
-                log("已断开")
-            }
-        }
-    }
 }
