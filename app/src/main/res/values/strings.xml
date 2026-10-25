@@ -80,6 +80,32 @@
 
     <!-- 环境自检/诊断页 -->
     <string name="btn_open_diagnosis">环境自检</string>
+
+    <!-- 经典蓝牙 HID Device 模式不可用标注（本机系统不支持） -->
+    <string name="classic_mode_unavailable">经典蓝牙 HID Device 不可用（系统不支持），请改用下方「BLE 翻页器」模式</string>
+
+    <!-- BLE HOGP 翻页器模式 -->
+    <string name="btn_open_ble">BLE 翻页器（推荐）</string>
+    <string name="ble_title">BLE 翻页器</string>
+    <string name="ble_status_idle">状态：未广播</string>
+    <string name="ble_btn_start">开始广播</string>
+    <string name="ble_btn_stop">停止广播</string>
+    <string name="ble_btn_repair">重新配对</string>
+    <string name="ble_label_page_up">上一页</string>
+    <string name="ble_label_page_down">下一页</string>
+    <string name="ble_label_play_pause">播放/暂停</string>
+    <string name="ble_last_sent">最近发送：%1$s（%2$s）</string>
+    <string name="ble_notif_title">X3-Pager 运行中</string>
+    <string name="ble_toast_advertising">开始广播：X3-Pager</string>
+    <string name="ble_toast_stopped">已停止广播</string>
+    <string name="ble_toast_started">已启动广播服务</string>
+    <string name="ble_toast_not_advertising">请先开始广播</string>
+    <string name="ble_toast_unavailable">BLE 外设模式不可用：%1$s</string>
+    <string name="ble_toast_permission_missing">请先授予蓝牙与通知权限</string>
+    <string name="ble_toast_no_pair_perm">无配对权限：%1$s</string>
+    <string name="ble_toast_repair">已请求重新配对：%1$s</string>
+    <string name="ble_toast_no_device">暂无已连接设备，请先在主机侧搜索并连接 X3-Pager</string>
+
     <string name="diagnosis_title">环境自检</string>
     <string name="diagnosis_btn_start">开始自检</string>
     <string name="diagnosis_log_hint">点击「开始自检」逐项检测蓝牙/HID 环境…</string>

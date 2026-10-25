@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- 状态区 -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/ble_tv_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ble_status_idle"
+                android:textColor="@color/colorOnSurface"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/ble_tv_last_sent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 广播控制 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/ble_btn_toggle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:text="@string/ble_btn_start" />
+
+    <!-- 上一页 / 下一页 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/ble_btn_page_up"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:text="@string/btn_page_up"
+            android:textSize="16sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/ble_btn_page_down"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="@string/btn_page_down"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- 播放/暂停（可选） -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/ble_btn_play_pause"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="12dp"
+        android:text="@string/ble_label_play_pause" />
+
+    <!-- 重新配对 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/ble_btn_repair"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:text="@string/ble_btn_repair" />
+
+</LinearLayout>

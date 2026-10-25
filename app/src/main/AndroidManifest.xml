@@ -6,6 +6,8 @@
         android:name="android.permission.BLUETOOTH_SCAN"
         android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- BLE 外设广播（HOGP 翻页器模式） -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
 
     <!-- Android 11 及以下经典蓝牙权限 -->
     <uses-permission
@@ -27,6 +29,10 @@
 
     <uses-feature
         android:name="android.hardware.bluetooth"
+        android:required="false" />
+    <!-- BLE 外设广播：大多数手机支持，不强制 -->
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
         android:required="false" />
 
     <application
@@ -55,8 +61,20 @@
             android:exported="false"
             android:label="@string/diagnosis_title" />
 
+        <!-- BLE HOGP 翻页器模式页：由主界面按钮跳入，不对外导出 -->
+        <activity
+            android:name="com.hidpager.ble.BlePagerActivity"
+            android:exported="false"
+            android:label="@string/ble_title" />
+
         <service
             android:name="com.hidpager.hid.HidDeviceService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
+
+        <!-- BLE 广播保活前台服务 -->
+        <service
+            android:name="com.hidpager.ble.BlePagerService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
 

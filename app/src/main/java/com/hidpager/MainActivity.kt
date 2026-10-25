@@ -203,6 +203,10 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btn_open_miuix).setOnClickListener {
             startActivity(Intent(this, MiuixActivity::class.java))
         }
+        // BLE HOGP 翻页器入口：仅跳转，经典 HID 服务保持原样
+        findViewById<MaterialButton>(R.id.btn_open_ble).setOnClickListener {
+            startActivity(Intent(this, com.hidpager.ble.BlePagerActivity::class.java))
+        }
         // 环境自检页入口：仅跳转，不触碰 HID 服务
         findViewById<MaterialButton>(R.id.btn_open_diagnosis).setOnClickListener {
             startActivity(Intent(this, DiagnosisActivity::class.java))
