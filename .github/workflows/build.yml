@@ -4,6 +4,15 @@ on:
   push:
     branches: [ main ]
   workflow_dispatch:
+    inputs:
+      version_name:
+        type: string
+        default: '1.1'
+        description: Release versionName（如 1.1）
+      version_code:
+        type: string
+        default: '2'
+        description: Release versionCode（整数，如 2）
 
 jobs:
   build:
@@ -44,8 +53,23 @@ jobs:
       - name: Build debug APK
         run: ./gradlew assembleDebug
 
-      - name: Build release APK (debug-signed)
-        run: ./gradlew assembleRelease
+      # 从 GitHub Secrets 解码 release keystore 到 runner 临时目录，注入 env（命令文本不出现 secret 值，日志不回显）
+      - name: Decode release keystore
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/hidpager.jks"
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/hidpager.jks" >> "$GITHUB_ENV"
+          echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Build release APK
+        run: ./gradlew assembleRelease -PversionName=${{ inputs.version_name || '1.0' }} -PversionCode=${{ inputs.version_code || '1' }}
 
       - name: Upload APKs
         uses: actions/upload-artifact@v4

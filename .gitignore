@@ -13,3 +13,7 @@ local.properties
 
 # Logs
 *.log
+
+# Keystore（正式签名密钥，本在工程外，此为保险）
+*.jks
+*.keystore

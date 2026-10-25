@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.io.File
 
 plugins {
     id("com.android.application")
@@ -16,11 +17,26 @@ android {
         applicationId = "com.hidpager"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        // 版本号由 -PversionCode=xx -PversionName=xx 注入（CI dispatch 传入），无参数时保持默认 1 / 1.0
+        versionCode = providers.gradleProperty("versionCode").getOrElse("1").toInt()
+        versionName = providers.gradleProperty("versionName").getOrElse("1.0")
         // 工程 strings.xml 全部为中文（无 values-xx 多语言目录），裁剪其余语言资源
         // Kotlin DSL 中 resConfigs 是 vararg 函数而非属性，须以函数调用形式书写
         resConfigs("zh")
+    }
+
+    // 正式签名配置：仅当 CI 注入 KEYSTORE_PATH 且文件存在时才填充；
+    // 本地无该环境变量则留空，release 回退 debug 签名，本地构建不受影响
+    signingConfigs {
+        create("release") {
+            val ksPath = providers.environmentVariable("KEYSTORE_PATH").orNull
+            if (!ksPath.isNullOrEmpty() && File(ksPath).exists()) {
+                storeFile = file(ksPath)
+                storePassword = providers.environmentVariable("KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("KEY_ALIAS").orNull
+                keyPassword = providers.environmentVariable("KEY_PASSWORD").orNull
+            }
+        }
     }
 
     buildTypes {
@@ -28,8 +44,9 @@ android {
             // 开启 R8 代码混淆/压缩 + 资源裁剪（shrinkResources）
             isMinifyEnabled = true
             isShrinkResources = true
-            // release 复用 debug 签名，避免引入签名密钥 / CI secrets
-            signingConfig = signingConfigs.getByName("debug")
+            // CI 有 keystore 用正式签名；本地缺失回退 debug 签名，避免引入签名密钥 / CI secrets
+            signingConfig = signingConfigs.findByName("release")?.takeIf { it.storeFile?.exists() == true }
+                ?: signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
