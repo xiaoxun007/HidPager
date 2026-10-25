@@ -49,6 +49,12 @@
             android:exported="false"
             android:label="Miuix 演示" />
 
+        <!-- 环境自检/诊断页：由主界面按钮跳入，不对外导出 -->
+        <activity
+            android:name="com.hidpager.DiagnosisActivity"
+            android:exported="false"
+            android:label="@string/diagnosis_title" />
+
         <service
             android:name="com.hidpager.hid.HidDeviceService"
             android:exported="false"

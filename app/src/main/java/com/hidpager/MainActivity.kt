@@ -203,6 +203,10 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btn_open_miuix).setOnClickListener {
             startActivity(Intent(this, MiuixActivity::class.java))
         }
+        // 环境自检页入口：仅跳转，不触碰 HID 服务
+        findViewById<MaterialButton>(R.id.btn_open_diagnosis).setOnClickListener {
+            startActivity(Intent(this, DiagnosisActivity::class.java))
+        }
 
         // 配对广播（API 34+ 必须显式指定 exported 标志）
         val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)

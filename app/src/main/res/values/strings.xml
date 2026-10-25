@@ -77,4 +77,16 @@
     <string name="log_mode_media">已切换到媒体模式：上一页=音量+，下一页=音量-，回车=播放/暂停</string>
     <string name="log_mode_keyboard">已切换回键盘模式</string>
     <string name="log_media_key_unmapped">媒体模式下该键未映射</string>
+
+    <!-- 环境自检/诊断页 -->
+    <string name="btn_open_diagnosis">环境自检</string>
+    <string name="diagnosis_title">环境自检</string>
+    <string name="diagnosis_btn_start">开始自检</string>
+    <string name="diagnosis_log_hint">点击「开始自检」逐项检测蓝牙/HID 环境…</string>
+    <string name="diagnosis_restart_bluetooth">重启蓝牙栈</string>
+    <string name="diagnosis_force_stop">force-stop 占用者</string>
+    <string name="diagnosis_confirm_title">确认执行</string>
+    <string name="diagnosis_confirm_msg">即将通过 root 执行：%1$s\n蓝牙将短暂断开，可能影响已连接设备。是否继续？</string>
+    <string name="diagnosis_confirm_ok">确定</string>
+    <string name="diagnosis_confirm_cancel">取消</string>
 </resources>
