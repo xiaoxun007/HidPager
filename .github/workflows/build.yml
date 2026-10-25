@@ -54,19 +54,21 @@ jobs:
         run: ./gradlew assembleDebug
 
       # 从 GitHub Secrets 解码 release keystore 到 runner 临时目录，注入 env（命令文本不出现 secret 值，日志不回显）
+      # 注意：step 级 if: 不能用 secrets 上下文，故改在 shell 里判断 KEYSTORE_BASE64 非空才解码，未配置则跳过
       - name: Decode release keystore
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/hidpager.jks"
-          echo "KEYSTORE_PATH=$RUNNER_TEMP/hidpager.jks" >> "$GITHUB_ENV"
-          echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
-          echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
-          echo "KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/hidpager.jks"
+            echo "KEYSTORE_PATH=$RUNNER_TEMP/hidpager.jks" >> "$GITHUB_ENV"
+            echo "KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          fi
 
       - name: Build release APK
         run: ./gradlew assembleRelease -PversionName=${{ inputs.version_name || '1.0' }} -PversionCode=${{ inputs.version_code || '1' }}
