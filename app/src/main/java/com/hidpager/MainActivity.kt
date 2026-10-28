@@ -33,7 +33,9 @@ class MainActivity : AppCompatActivity() {
         tvStatus = findViewById(R.id.tv_status)
 
         // 打开主页始终回到顶部：NestedScrollView 会恢复上次滚动位置
-        findViewById<NestedScrollView>(R.id.scroll_root).post { it.scrollTo(0, 0) }
+        // View.post 接收无参 Runnable，lambda 无隐式 it，用闭包捕获 scrollRoot
+        val scrollRoot = findViewById<NestedScrollView>(R.id.scroll_root)
+        scrollRoot.post { scrollRoot.scrollTo(0, 0) }
 
         // 保持经典 HID 前台服务存活（SystemHidActivity/PagerRemoteActivity 绑定的同一服务）；
         // 此处仅 start 不 bind，不做注册/按键
