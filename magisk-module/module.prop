@@ -1,0 +1,6 @@
+id=hidpager-privapp
+name=HidPager Privileged
+version=v1.3.0
+versionCode=4
+author=xiaoxun007
+description=把 App 预置为 /system/priv-app 以获得 BLUETOOTH_PRIVILEGED（signature|privileged），激活经典蓝牙 HID 遥控（阅星瞳 X3 上一页/下一页/播放暂停）

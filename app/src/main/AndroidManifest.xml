@@ -17,6 +17,12 @@
         android:name="android.permission.BLUETOOTH_ADMIN"
         android:maxSdkVersion="30" />
 
+    <!-- 经典 HID Device 特权权限：signature|privileged 保护级，普通安装不授予；
+         仅当 App 预置为 /system/priv-app（随 magisk-module 安装）且在
+         system/etc/permissions allowlist 中声明后才生效，从而拿到非 null 的
+         BluetoothHidDevice 代理 -->
+    <uses-permission android:name="android.permission.BLUETOOTH_PRIVILEGED" />
+
     <!-- Android 11 及以下经典扫描需要定位 -->
     <uses-permission
         android:name="android.permission.ACCESS_FINE_LOCATION"
@@ -66,6 +72,12 @@
             android:name="com.hidpager.ble.BlePagerActivity"
             android:exported="false"
             android:label="@string/ble_title" />
+
+        <!-- 经典系统 HID（priv-app 特权）状态页：由主界面按钮跳入，不对外导出 -->
+        <activity
+            android:name="com.hidpager.hid.SystemHidActivity"
+            android:exported="false"
+            android:label="@string/syshid_title" />
 
         <service
             android:name="com.hidpager.hid.HidDeviceService"

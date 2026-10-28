@@ -106,6 +106,21 @@
     <string name="ble_toast_repair">已请求重新配对：%1$s</string>
     <string name="ble_toast_no_device">暂无已连接设备，请先在主机侧搜索并连接 X3-Pager</string>
 
+    <!-- 经典系统 HID（priv-app / BLUETOOTH_PRIVILEGED）特权状态页 -->
+    <string name="btn_open_syshid">系统 HID 模式（priv-app 特权）</string>
+    <string name="syshid_title">系统 HID 模式</string>
+    <string name="syshid_proxy_unknown">HID 代理：未连接服务</string>
+    <string name="syshid_proxy_ok">HID 代理：已获取（BLUETOOTH_PRIVILEGED 生效）</string>
+    <string name="syshid_proxy_null">HID 代理：为 null（未部署 priv-app 模块 / 缺 BLUETOOTH_PRIVILEGED）</string>
+    <string name="syshid_registered_yes">registerApp：已注册</string>
+    <string name="syshid_registered_no">registerApp：未注册</string>
+    <string name="syshid_connected_ok">已连接设备：%1$s</string>
+    <string name="syshid_connected_none">已连接设备：无</string>
+    <string name="syshid_not_connected">未连接主机，按键无效</string>
+    <string name="syshid_last_sent">最近发送：%1$s（%2$s）</string>
+    <string name="syshid_btn_retry_register">重新注册 HID</string>
+    <string name="syshid_retry_toast">已重新尝试注册</string>
+
     <string name="diagnosis_title">环境自检</string>
     <string name="diagnosis_btn_start">开始自检</string>
     <string name="diagnosis_log_hint">点击「开始自检」逐项检测蓝牙/HID 环境…</string>

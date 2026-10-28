@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <!-- 特权状态区 -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/syshid_tv_proxy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/syshid_proxy_unknown"
+                android:textColor="@color/colorOnSurface"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/syshid_tv_registered"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/colorOnSurface"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/syshid_tv_connected"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="@color/colorOnSurface"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/syshid_tv_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/syshid_btn_retry_register"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:text="@string/syshid_btn_retry_register" />
+
+    <!-- 上一页 / 下一页 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:weightSum="2">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/syshid_btn_page_up"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_marginEnd="6dp"
+            android:layout_weight="1"
+            android:text="@string/btn_page_up"
+            android:textSize="16sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/syshid_btn_page_down"
+            android:layout_width="0dp"
+            android:layout_height="64dp"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="@string/btn_page_down"
+            android:textSize="16sp" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/syshid_btn_play_pause"
+        style="@style/Widget.Material3.Button.TonalButton"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="12dp"
+        android:text="@string/ble_label_play_pause" />
+
+</LinearLayout>

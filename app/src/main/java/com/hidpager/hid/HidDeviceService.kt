@@ -250,7 +250,12 @@ class HidDeviceService : Service() {
             // compileSdk 36 的 registerApp 真实签名为 5 参：
             // (SdpSettings, inQos: QosSettings, outQos: QosSettings, Executor, Callback)
             // 输入/输出两个 QosSettings 都用 BestEffort 零参数，executor 回调线程、回调对象均不变
-            val ok = h.registerApp(sdp, qos, qos, Executor { it.run() }, hidCallback)
+            val ok = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                h.registerApp(sdp, qos, qos, Executor { it.run() }, hidCallback)
+            } else {
+                // API 28/29/30：系统侧无 Executor 版公开重载，只能反射隐藏 registerApp（参考工程同款分支）
+                registerViaReflection(h, sdp)
+            }
             log("registerApp 调用结果: $ok")
             ok
         } catch (e: SecurityException) {
@@ -258,6 +263,35 @@ class HidDeviceService : Service() {
             false
         } catch (e: Exception) {
             log("registerApp 异常: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * API 28/29/30 兼容分支（与参考工程 ble-hid-mediakeys 一致）：
+     * compileSdk 36 仅暴露 5 参 Executor 版 registerApp（API 31+ 系统方法），
+     * 旧系统上隐藏的 registerApp 只能按形参类型反射调用，只填 SdpSettings 与 Callback，其余置 null。
+     */
+    private fun registerViaReflection(
+        hid: BluetoothHidDevice,
+        sdp: BluetoothHidDeviceAppSdpSettings
+    ): Boolean {
+        return try {
+            for (method in hid.javaClass.methods) {
+                if (method.name != "registerApp") continue
+                val types = method.parameterTypes
+                if (types.isEmpty()) continue
+                if (!types[0].isInstance(sdp)) continue
+                if (!types[types.size - 1].isInstance(hidCallback)) continue
+                val args = arrayOfNulls<Any>(types.size)
+                args[0] = sdp
+                args[types.size - 1] = hidCallback
+                val result = method.invoke(hid, *args)
+                result as? Boolean ?: false
+            }
+            false
+        } catch (e: Exception) {
+            log("反射 registerApp 失败: ${e.message}")
             false
         }
     }
@@ -393,6 +427,9 @@ class HidDeviceService : Service() {
     }
 
     fun getHidState(): Int = state
+
+    /** 特权状态页用：BluetoothHidDevice 代理是否获取成功（priv-app/BLUETOOTH_PRIVILEGED 生效后非 null） */
+    fun isHidProxyAvailable(): Boolean = hid != null
 
     fun getConnectedDevice(): BluetoothDevice? = connectedDevice
 }

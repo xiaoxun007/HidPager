@@ -1,0 +1,20 @@
+#!/sbin/sh
+#############################################################
+# 标准 Magisk 模块模板（Magisk 20+）
+# ------------------------------------------------------------------
+# 说明：本文件为 Magisk 管理器安装模块时使用的官方模板，请勿自创
+#       安装逻辑。KernelSU 管理器兼容本模块，安装由 ksud 自身流程
+#       完成（KernelSU 一般不执行本脚本，二者无冲突）。
+# 由 Magisk 安装时传入：$1=INSTALLER，$2=OUTFD，$3=ZIPFILE
+#############################################################
+
+OUTFD=$2
+ZIPFILE=$3
+
+mount /data 2>/dev/null
+
+[ -f /data/adb/magisk/util_functions.sh ] || exit 1
+. /data/adb/magisk/util_functions.sh
+
+install_module
+exit 0

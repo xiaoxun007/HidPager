@@ -17,3 +17,7 @@ local.properties
 # Keystore（正式签名密钥，本在工程外，此为保险）
 *.jks
 *.keystore
+
+# Magisk/KernelSU 模块构建产物（由 build-module.sh 生成，不入库）
+magisk-module/system/priv-app/HidPager/*.apk
+HidPager-privapp-*.zip

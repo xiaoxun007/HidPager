@@ -51,7 +51,15 @@
             android:layout_marginBottom="4dp"
             android:text="@string/btn_open_ble" />
 
-        <!-- 经典模式不可用标注 -->
+        <!-- 经典系统 HID（priv-app 特权）入口：需先安装 magisk-module 获得 BLUETOOTH_PRIVILEGED -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_open_syshid"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="4dp"
+            android:text="@string/btn_open_syshid" />
+
+        <!-- 经典模式不可用标注（未装 priv-app 模块时 stock 系统的诊断结论） -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

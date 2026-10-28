@@ -207,6 +207,10 @@ class MainActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btn_open_ble).setOnClickListener {
             startActivity(Intent(this, com.hidpager.ble.BlePagerActivity::class.java))
         }
+        // 经典系统 HID（priv-app 特权）状态页入口：仅跳转，绑定现有 HidDeviceService
+        findViewById<MaterialButton>(R.id.btn_open_syshid).setOnClickListener {
+            startActivity(Intent(this, com.hidpager.hid.SystemHidActivity::class.java))
+        }
         // 环境自检页入口：仅跳转，不触碰 HID 服务
         findViewById<MaterialButton>(R.id.btn_open_diagnosis).setOnClickListener {
             startActivity(Intent(this, DiagnosisActivity::class.java))
