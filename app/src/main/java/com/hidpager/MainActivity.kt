@@ -199,7 +199,7 @@ class MainActivity : AppCompatActivity() {
 
         btnScan.setOnClickListener { toggleScan() }
         findViewById<MaterialButton>(R.id.btn_clear_log).setOnClickListener { tvLog.text = "" }
-        // Miuix 演示页入口：仅跳转，不触碰 HID 服务
+        // 翻页遥控（View 版）入口：仅跳转，不触碰 HID 服务
         findViewById<MaterialButton>(R.id.btn_open_miuix).setOnClickListener {
             startActivity(Intent(this, MiuixActivity::class.java))
         }

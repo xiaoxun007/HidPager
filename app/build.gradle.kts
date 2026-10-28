@@ -4,7 +4,7 @@ import java.io.File
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
+    // kotlin.plugin.compose 已移除：MiuixActivity 重构为 View 版，不再需要 Compose 编译器
 }
 
 android {
@@ -54,10 +54,9 @@ android {
         }
     }
 
-    buildFeatures {
-        // 开启 Compose 支持（View+XML 体系保持不变，仅叠加 Compose 入口）
-        compose = true
-    }
+    // Compose 已整体移除：MiuixActivity 重构为标准 View+XML 页面，
+    // 全工程不再引用 androidx.compose / top.yukonga，故 compose buildFeatures 与全部
+    // compose/miuix 依赖（含 activity-compose）一并删除。
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -80,15 +79,7 @@ dependencies {
     // androidx.constraintlayout:constraintlayout 已删除：
     // 全量 grep 源码(.kt)/布局(.xml)/gradle 无任何 import 或 XML 标签引用，属未使用依赖
 
-    // ---- Compose 基础：版本与 Miuix 0.8.8 传递进来的 androidx.compose 1.10.5 对齐（CMP 1.10.3）----
-    implementation("androidx.compose.ui:ui:1.10.5")
-    implementation("androidx.compose.ui:ui-tooling-preview:1.10.5")
-    debugImplementation("androidx.compose.ui:ui-tooling:1.10.5")
-    // ComponentActivity.setContent { ... } 扩展
-    implementation("androidx.activity:activity-compose:1.11.0")
-
-    // ---- Miuix（HyperOS 风格组件库）----
-    // 降级 0.9.0 -> 0.8.8：0.9.x 模块重构后拆为 miuix-ui-android，要求 compileSdk 37+；
-    // 0.8.8 是重构前的单一工件 miuix-android，compileSdk 36 生态稳定版，API 与 0.9.0 兼容
-    implementation("top.yukonga.miuix.kmp:miuix-android:0.8.8")
+    // Compose 基础（androidx.compose.ui / activity-compose）与 Miuix 组件库
+    // （top.yukonga.miuix.kmp:miuix-android）已随 MiuixActivity 的 View 版重构一并移除：
+    // 删除 MiuixActivity 的 Compose 实现后全工程无任何 compose import，保留只会徒增体积
 }

@@ -68,13 +68,13 @@
             android:textColor="@color/colorError"
             android:textSize="13sp" />
 
-        <!-- Miuix 演示入口（Compose 页面），不影响任何 HID 逻辑 -->
+        <!-- 翻页遥控（View 版）入口，不影响任何 HID 逻辑 -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_open_miuix"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            android:text="打开 Miuix 风格界面" />
+            android:text="翻页遥控（View 版）" />
 
         <!-- 环境自检入口：诊断蓝牙/HID 注册环境，不影响任何 HID 逻辑 -->
         <com.google.android.material.button.MaterialButton

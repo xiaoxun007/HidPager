@@ -7,65 +7,36 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
-import androidx.activity.compose.setContent
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.hidpager.hid.HidDeviceService
 import com.hidpager.hid.HidDeviceService.KeyMode
 import com.hidpager.hid.HidKeys
-import kotlinx.coroutines.delay
-import top.yukonga.miuix.kmp.basic.Button
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TopAppBar
-import top.yukonga.miuix.kmp.theme.ColorSchemeMode
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.theme.ThemeController
 
 /**
- * Miuix（HyperOS 风格）界面。
+ * 翻页遥控（标准 View 版，原 Miuix/Compose 页重构而来，功能等价）。
  *
- * 在原有 Miuix 主题/Scaffold/TopAppBar/Button 结构上接入真实 HID 功能：
  * - onStart() 绑定主界面已启动的 HidDeviceService（仅 bind，不 startService）；
- * - 通过 HidDeviceService.Listener 用 Compose 状态驱动连接状态行；
- * - 「上一页/下一页」按钮调 sendKey，未连接时给出可见提示而非静默失败。
+ * - 状态行显示 HID 连接状态；
+ * - 媒体模式开关：上一页/下一页 ↔ 键盘 PageUp/Down 或 Consumer Volume+/-；
+ * - 「上一页/下一页」按钮调 sendKey，未连接时 Toast 提示而非静默失败。
  * hid/ 包与 MainActivity 的既有绑定/注册逻辑零改动。
  */
 class MiuixActivity : AppCompatActivity() {
 
     private var service: HidDeviceService? = null
 
-    // ---- Compose 状态：0 未注册 / 1 连接中 / 2 已连接；设备名；瞬时提示；媒体模式开关 ----
-    private var hidState by mutableIntStateOf(0)
-    private var deviceName by mutableStateOf("")
-    private var hint by mutableStateOf<String?>(null)
-    private var mediaMode by mutableStateOf(false)
+    private lateinit var tvStatus: TextView
+    private lateinit var switchMode: SwitchMaterial
 
     private val hidListener = object : HidDeviceService.Listener {
         override fun onHidStateChanged(state: Int, device: BluetoothDevice?) {
             // onAppStatusChanged/onConnectionStateChanged 经 registerApp 的 Executor 回调，
-            // 可能在非主线程触发；Compose 快照状态必须在主线程写入（对齐 MainActivity 的 runOnUiThread 包裹）
-            runOnUiThread {
-                hidState = state
-                deviceName = try {
-                    device?.name ?: ""
-                } catch (e: SecurityException) {
-                    ""
-                }
-            }
+            // 可能在非主线程触发，统一切主线程刷新
+            runOnUiThread { refreshStatus(device) }
         }
 
         override fun onLog(line: String) {
@@ -79,88 +50,42 @@ class MiuixActivity : AppCompatActivity() {
             service = svc
             svc.setListener(hidListener)
             // 绑定后先同步一次当前状态（服务由主界面启动并保持运行，这里不重复 registerHid）
-            hidState = svc.getHidState()
-            mediaMode = svc.getKeyMode() == KeyMode.MEDIA
-            deviceName = try {
-                svc.getConnectedDevice()?.name ?: ""
-            } catch (e: SecurityException) {
-                ""
+            switchMode.setOnCheckedChangeListener(null)
+            switchMode.isChecked = svc.getKeyMode() == KeyMode.MEDIA
+            switchMode.setOnCheckedChangeListener { _, checked ->
+                svc.setKeyMode(if (checked) KeyMode.MEDIA else KeyMode.KEYBOARD)
+                Toast.makeText(
+                    this@MiuixActivity,
+                    getString(if (checked) R.string.log_mode_media else R.string.log_mode_keyboard),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
+            refreshStatus(svc.getConnectedDevice())
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             service = null
-            hidState = 0
-            deviceName = ""
-            mediaMode = false
+            refreshStatus(null)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            // 可用模式：System / Light / Dark / MonetSystem / MonetLight / MonetDark
-            val controller = remember { ThemeController(ColorSchemeMode.System) }
-            MiuixTheme(controller = controller) {
-                Scaffold(
-                    topBar = { TopAppBar(title = "翻页遥控器") },
-                    content = { innerPadding ->
-                        // 状态行：未连接 → 提示回主界面连接；连接中/已连接复用主界面文案
-                        val statusText = when (hidState) {
-                            1 -> getString(R.string.status_connecting)
-                            2 -> getString(
-                                R.string.status_connected,
-                                deviceName.ifEmpty { getString(R.string.device_unknown) }
-                            )
-                            else -> getString(R.string.miuix_status_idle)
-                        }
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(innerPadding)
-                                .padding(horizontal = 24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(
-                                16.dp,
-                                Alignment.CenterVertically
-                            )
-                        ) {
-                            Text(statusText)
-                            // 当前按键模式 + 切换开关（miuix Switch，checked/onCheckedChange 两个必填参）
-                            Text(getString(if (mediaMode) R.string.mode_media else R.string.mode_keyboard))
-                            Switch(
-                                checked = mediaMode,
-                                onCheckedChange = { checked ->
-                                    mediaMode = checked
-                                    service?.setKeyMode(if (checked) KeyMode.MEDIA else KeyMode.KEYBOARD)
-                                }
-                            )
-                            Button(onClick = { sendPage(up = true) }) {
-                                Text("上一页")
-                            }
-                            Button(onClick = { sendPage(up = false) }) {
-                                Text("下一页")
-                            }
-                            // 瞬时操作提示（未连接等），2 秒后自动消失
-                            hint?.let { Text(it) }
-                            LaunchedEffect(hint) {
-                                if (hint != null) {
-                                    delay(2000L)
-                                    hint = null
-                                }
-                            }
-                        }
-                    }
-                )
-            }
-        }
+        setContentView(R.layout.activity_miuix)
+        title = getString(R.string.title_main)
+
+        tvStatus = findViewById(R.id.view_tv_status)
+        switchMode = findViewById(R.id.view_switch_mode)
+
+        findViewById<MaterialButton>(R.id.view_btn_page_up).setOnClickListener { sendPage(up = true) }
+        findViewById<MaterialButton>(R.id.view_btn_page_down).setOnClickListener { sendPage(up = false) }
     }
 
     /** 点击翻页：按当前模式选 Usage（键盘→PageUp/Down；媒体→Volume+/-）；未连接给出可见提示，不静默失败 */
     private fun sendPage(up: Boolean) {
         val svc = service
         if (svc == null || svc.getHidState() != 2) {
-            hint = getString(R.string.log_not_connected)
+            Toast.makeText(this, R.string.log_not_connected, Toast.LENGTH_SHORT).show()
             return
         }
         val usage = when (svc.getKeyMode()) {
@@ -168,6 +93,17 @@ class MiuixActivity : AppCompatActivity() {
             KeyMode.KEYBOARD -> if (up) HidKeys.KEY_PAGE_UP else HidKeys.KEY_PAGE_DOWN
         }
         svc.sendKey(usage)
+    }
+
+    private fun refreshStatus(device: BluetoothDevice?) {
+        val svc = service
+        val state = svc?.getHidState() ?: 0
+        val devName = try { device?.name ?: "" } catch (e: SecurityException) { "" }
+        tvStatus.text = when (state) {
+            1 -> getString(R.string.status_connecting)
+            2 -> getString(R.string.status_connected, devName.ifEmpty { getString(R.string.device_unknown) })
+            else -> getString(R.string.miuix_status_idle)
+        }
     }
 
     override fun onStart() {
@@ -179,7 +115,7 @@ class MiuixActivity : AppCompatActivity() {
                 serviceConnection, Context.BIND_AUTO_CREATE
             )
         } catch (e: Exception) {
-            hint = e.message
+            Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
         }
     }
 
