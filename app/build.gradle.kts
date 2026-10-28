@@ -17,9 +17,9 @@ android {
         applicationId = "com.hidpager"
         minSdk = 28
         targetSdk = 34
-        // 版本号由 -PversionCode=xx -PversionName=xx 注入（CI dispatch 传入），无参数时保持默认 1 / 1.0
-        versionCode = providers.gradleProperty("versionCode").getOrElse("1").toInt()
-        versionName = providers.gradleProperty("versionName").getOrElse("1.0")
+        // 版本号由 -PversionCode=xx -PversionName=xx 注入（CI dispatch 传入），无参数时保持默认 5 / 2.0
+        versionCode = providers.gradleProperty("versionCode").getOrElse("5").toInt()
+        versionName = providers.gradleProperty("versionName").getOrElse("2.0")
         // 工程 strings.xml 全部为中文（无 values-xx 多语言目录），裁剪其余语言资源
         // Kotlin DSL 中 resConfigs 是 vararg 函数而非属性，须以函数调用形式书写
         resConfigs("zh")
