@@ -200,8 +200,8 @@ class MainActivity : AppCompatActivity() {
         btnScan.setOnClickListener { toggleScan() }
         findViewById<MaterialButton>(R.id.btn_clear_log).setOnClickListener { tvLog.text = "" }
         // 翻页遥控（View 版）入口：仅跳转，不触碰 HID 服务
-        findViewById<MaterialButton>(R.id.btn_open_miuix).setOnClickListener {
-            startActivity(Intent(this, MiuixActivity::class.java))
+        findViewById<MaterialButton>(R.id.btn_open_pager_remote).setOnClickListener {
+            startActivity(Intent(this, PagerRemoteActivity::class.java))
         }
         // BLE HOGP 翻页器入口：仅跳转，经典 HID 服务保持原样
         findViewById<MaterialButton>(R.id.btn_open_ble).setOnClickListener {

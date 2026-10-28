@@ -17,7 +17,7 @@ import com.hidpager.hid.HidDeviceService.KeyMode
 import com.hidpager.hid.HidKeys
 
 /**
- * 翻页遥控（标准 View 版，原 Miuix/Compose 页重构而来，功能等价）。
+ * 翻页遥控（标准 View 版页面）。
  *
  * - onStart() 绑定主界面已启动的 HidDeviceService（仅 bind，不 startService）；
  * - 状态行显示 HID 连接状态；
@@ -25,7 +25,7 @@ import com.hidpager.hid.HidKeys
  * - 「上一页/下一页」按钮调 sendKey，未连接时 Toast 提示而非静默失败。
  * hid/ 包与 MainActivity 的既有绑定/注册逻辑零改动。
  */
-class MiuixActivity : AppCompatActivity() {
+class PagerRemoteActivity : AppCompatActivity() {
 
     private var service: HidDeviceService? = null
 
@@ -55,7 +55,7 @@ class MiuixActivity : AppCompatActivity() {
             switchMode.setOnCheckedChangeListener { _, checked ->
                 svc.setKeyMode(if (checked) KeyMode.MEDIA else KeyMode.KEYBOARD)
                 Toast.makeText(
-                    this@MiuixActivity,
+                    this@PagerRemoteActivity,
                     getString(if (checked) R.string.log_mode_media else R.string.log_mode_keyboard),
                     Toast.LENGTH_SHORT
                 ).show()
@@ -71,7 +71,7 @@ class MiuixActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_miuix)
+        setContentView(R.layout.activity_pager_remote)
         title = getString(R.string.title_main)
 
         tvStatus = findViewById(R.id.view_tv_status)
@@ -102,7 +102,7 @@ class MiuixActivity : AppCompatActivity() {
         tvStatus.text = when (state) {
             1 -> getString(R.string.status_connecting)
             2 -> getString(R.string.status_connected, devName.ifEmpty { getString(R.string.device_unknown) })
-            else -> getString(R.string.miuix_status_idle)
+            else -> getString(R.string.pager_remote_status_idle)
         }
     }
 

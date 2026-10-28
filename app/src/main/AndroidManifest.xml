@@ -55,9 +55,9 @@
             </intent-filter>
         </activity>
 
-        <!-- 翻页遥控（标准 View 版页面，原 Miuix/Compose 页重构而来）：由 MainActivity 内按钮跳入 -->
+        <!-- 翻页遥控（标准 View 版页面）：由 MainActivity 内按钮跳入 -->
         <activity
-            android:name="com.hidpager.MiuixActivity"
+            android:name="com.hidpager.PagerRemoteActivity"
             android:exported="false"
             android:label="翻页遥控（View 版）" />
 

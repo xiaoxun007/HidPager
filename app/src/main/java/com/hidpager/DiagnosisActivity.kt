@@ -84,7 +84,7 @@ class DiagnosisActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        // 复用 MiuixActivity 绑定模式；绑定失败不崩溃，第 4 项会提示
+        // 复用 PagerRemoteActivity 绑定模式；绑定失败不崩溃，第 4 项会提示
         try {
             bindService(
                 Intent(this, HidDeviceService::class.java),

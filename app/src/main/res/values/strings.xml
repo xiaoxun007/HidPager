@@ -67,8 +67,8 @@
     <string name="log_service_started">服务已启动</string>
     <string name="log_error_prefix">出错：%1$s</string>
 
-    <!-- Miuix 演示页：未连接提示 -->
-    <string name="miuix_status_idle">未连接设备，请先回主界面连接</string>
+    <!-- 翻页遥控（View 版）页：未连接提示 -->
+    <string name="pager_remote_status_idle">未连接设备，请先回主界面连接</string>
 
     <!-- 键盘/媒体模式切换 -->
     <string name="switch_media_mode">媒体模式（兼容电纸书等只认 Consumer 键的接收端）</string>

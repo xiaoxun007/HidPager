@@ -4,13 +4,13 @@ import java.io.File
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    // kotlin.plugin.compose 已移除：MiuixActivity 重构为 View 版，不再需要 Compose 编译器
+    // kotlin.plugin.compose 已移除：演示页重构为标准 View 实现，不再需要 Compose 编译器
 }
 
 android {
     namespace = "com.hidpager"
-    // 停在 compileSdk 36 生态：Miuix 0.8.8 官方即按 compileSdk 36 构建（其 BuildConfig COMPILE_SDK=36），
-    // 而 0.9.x 拆分成的 miuix-ui/core/shapes-android 要求 compileSdk 37（需 AGP 9.x，会连锁升级 Kotlin），故降级
+    // 停在 compileSdk 36 生态：与本机真机（API 36）及现有依赖 AAR 元数据对齐；
+    // 升 37 需 AGP 9.x，会连锁升级 Kotlin，暂不跟进
     compileSdk = 36
 
     defaultConfig {
@@ -54,9 +54,9 @@ android {
         }
     }
 
-    // Compose 已整体移除：MiuixActivity 重构为标准 View+XML 页面，
-    // 全工程不再引用 androidx.compose / top.yukonga，故 compose buildFeatures 与全部
-    // compose/miuix 依赖（含 activity-compose）一并删除。
+    // Compose 已整体移除：原 Compose 演示页重构为标准 View+XML 页面（PagerRemoteActivity），
+    // 全工程不再引用 androidx.compose，故 compose buildFeatures 与全部
+    // Compose UI 依赖（含 activity-compose）一并删除。
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -79,7 +79,7 @@ dependencies {
     // androidx.constraintlayout:constraintlayout 已删除：
     // 全量 grep 源码(.kt)/布局(.xml)/gradle 无任何 import 或 XML 标签引用，属未使用依赖
 
-    // Compose 基础（androidx.compose.ui / activity-compose）与 Miuix 组件库
-    // （top.yukonga.miuix.kmp:miuix-android）已随 MiuixActivity 的 View 版重构一并移除：
-    // 删除 MiuixActivity 的 Compose 实现后全工程无任何 compose import，保留只会徒增体积
+    // Compose 基础（androidx.compose.ui / activity-compose）依赖已随
+    // Compose 演示页的 View 版重构一并移除：重构后全工程无任何 Compose import，
+    // 保留只会徒增体积
 }
