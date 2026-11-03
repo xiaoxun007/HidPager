@@ -109,6 +109,12 @@ abstract class HidPeripheral(
     /** 已订阅 CCCD 的设备地址集合——未订阅时不发 notify。 */
     private val subscribedDevices = Collections.synchronizedSet(HashSet<String>())
 
+    /** 输入报告轮询 Timer（release 时 cancel，避免泄漏）。 */
+    private var pollTimer: Timer? = null
+
+    /** 配对进行中的 bondReceiver（主机断开时需注销，避免泄漏）。 */
+    private var pendingBondReceiver: BroadcastReceiver? = null
+
     private val inputReportQueue: Queue<ByteArray> = ConcurrentLinkedQueue()
     protected fun addInputReport(report: ByteArray) {
         if (report.isNotEmpty()) inputReportQueue.offer(report)
@@ -166,14 +172,16 @@ abstract class HidPeripheral(
         handler.post { addNextGattService() }
 
         // poll queue and notify ~dataSendingRate ms
-        Timer().scheduleAtFixedRate(object : TimerTask() {
-            override fun run() {
-                val polled = inputReportQueue.poll()
-                if (polled != null && inputReportCharacteristic != null) {
-                    handler.post { notifyInputReport(polled) }
+        pollTimer = Timer("HidPeripheral-poll").apply {
+            scheduleAtFixedRate(object : TimerTask() {
+                override fun run() {
+                    val polled = inputReportQueue.poll()
+                    if (polled != null && inputReportCharacteristic != null) {
+                        handler.post { notifyInputReport(polled) }
+                    }
                 }
-            }
-        }, 0, dataSendingRate.toLong())
+            }, 0, dataSendingRate.toLong())
+        }
     }
 
     private fun registerDevice(device: BluetoothDevice) {
@@ -380,14 +388,21 @@ abstract class HidPeripheral(
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .build()
 
-        // 修复 D：主广播包带 HID Service UUID(0x1812) + 设备名
+        // 修复 D：主广播包带 HID Service UUID(0x1812)；
+        //   reducedAdvertiseData=true 时去掉设备名（约省 10 字节）以适配 DATA_TOO_LARGE，
+        //   但必须保留 0x1812 service UUID（HOGP 主机靠它识别）。
         val advertiseDataBuilder = AdvertiseData.Builder()
             .setIncludeTxPowerLevel(false)
             .addServiceUuid(ParcelUuid(SERVICE_BLE_HID))
-            .setIncludeDeviceName(true)
+            .setIncludeDeviceName(!reducedAdvertiseData)
         val scanResultBuilder = AdvertiseData.Builder()
             .addServiceUuid(ParcelUuid(SERVICE_BATTERY))
             .setIncludeDeviceName(false)
+
+        if (reducedAdvertiseData) {
+            Log.d(tag, "Advertising degraded: device name removed from main ADV packet")
+            BleDiagnostics.log("ADV", "已降级广播包（去设备名）重试，保留 0x1812")
+        }
 
         advertiser.startAdvertising(settings, advertiseDataBuilder.build(), scanResultBuilder.build(), advertiseCallback)
     }
@@ -479,6 +494,14 @@ abstract class HidPeripheral(
         pairingRequestReceiver = null
     }
 
+    /** 注销配对中的 bondReceiver（幂等：重复调用不抛异常）。 */
+    private fun unregisterBondReceiver() {
+        pendingBondReceiver?.let {
+            try { applicationContext.unregisterReceiver(it) } catch (_: Exception) {}
+        }
+        pendingBondReceiver = null
+    }
+
     private fun createGattServerCallback(): BluetoothGattServerCallback = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             super.onConnectionStateChange(device, status, newState)
@@ -494,14 +517,14 @@ abstract class HidPeripheral(
                             // 这里只监听 bond 状态变化，不主动 createBond（peripheral 侧
                             // 主动 createBond 在部分主机上会死循环/失败）。
                             BleDiagnostics.setBond("未配对，等待主机发起加密连接触发 Just Works")
-                            val bondReceiver = object : BroadcastReceiver() {
+                            val receiver = object : BroadcastReceiver() {
                                 override fun onReceive(context: Context?, intent: Intent?) {
                                     if (intent?.action != BluetoothDevice.ACTION_BOND_STATE_CHANGED) return
                                     val state = intent.getIntExtra(
                                         BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR)
                                     when (state) {
                                         BluetoothDevice.BOND_BONDED -> {
-                                            try { applicationContext.unregisterReceiver(this) } catch (_: Exception) {}
+                                            unregisterBondReceiver()
                                             registerDevice(device)
                                             BleDiagnostics.setBond("已配对")
                                             // 修复 D：连接参数优化
@@ -512,19 +535,20 @@ abstract class HidPeripheral(
                                             BleDiagnostics.setBond("配对中…")
                                         }
                                         BluetoothDevice.BOND_NONE -> {
-                                            try { applicationContext.unregisterReceiver(this) } catch (_: Exception) {}
+                                            unregisterBondReceiver()
                                             BleDiagnostics.setBond("配对失败/被拒绝")
                                             Log.w(tag, "bonding failed/aborted for ${device.address}")
                                         }
                                     }
                                 }
                             }
+                            pendingBondReceiver = receiver
                             val filter = IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                applicationContext.registerReceiver(bondReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+                                applicationContext.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED)
                             } else {
                                 @Suppress("UnspecifiedRegisterReceiverFlag")
-                                applicationContext.registerReceiver(bondReceiver, filter)
+                                applicationContext.registerReceiver(receiver, filter)
                             }
                         }
                         BluetoothDevice.BOND_BONDED -> {
@@ -543,6 +567,8 @@ abstract class HidPeripheral(
                     val address = device.address
                     // 修复 C：断开后不自动 gattServer.connect() 重连——这会导致
                     // 主机侧配对失败后进入重连死循环。由主机端决定是否重连。
+                    // 若配对未完成就断开，注销 bondReceiver 避免泄漏到已断开设备。
+                    unregisterBondReceiver()
                     synchronized(devicesMap) { devicesMap.remove(address) }
                     subscribedDevices.remove(address)
                     BleDiagnostics.setBond("-")
@@ -734,5 +760,8 @@ abstract class HidPeripheral(
 
     fun release() {
         unregisterPairingRequestReceiver()
+        unregisterBondReceiver()
+        try { pollTimer?.cancel() } catch (_: Exception) {}
+        pollTimer = null
     }
 }
