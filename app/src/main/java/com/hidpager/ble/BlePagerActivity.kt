@@ -3,12 +3,15 @@ package com.hidpager.ble
 import android.Manifest
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -19,20 +22,21 @@ import com.hidpager.R
 
 /**
  * BLE HOGP page-turner UI: start/stop advertising, page up/down, play/pause, re-pair,
- * live status. Port of the fork's sample MainActivity; the classic BluetoothHidDevice
- * path on this device is unavailable (see DiagnosisActivity).
+ * live status + GATT 诊断日志。
  */
 class BlePagerActivity : AppCompatActivity() {
 
     private lateinit var tvStatus: TextView
-    private lateinit var btnToggle: MaterialButton
     private lateinit var tvLastSent: TextView
+    private lateinit var tvDiagSummary: TextView
+    private lateinit var tvLog: TextView
+    private lateinit var btnToggle: MaterialButton
     private val uiHandler = Handler(Looper.getMainLooper())
 
     private val refreshRunnable = object : Runnable {
         override fun run() {
             refreshUi()
-            uiHandler.postDelayed(this, 1000)
+            uiHandler.postDelayed(this, 500)
         }
     }
 
@@ -43,6 +47,8 @@ class BlePagerActivity : AppCompatActivity() {
 
         tvStatus = findViewById(R.id.ble_tv_status)
         tvLastSent = findViewById(R.id.ble_tv_last_sent)
+        tvDiagSummary = findViewById(R.id.ble_tv_diag_summary)
+        tvLog = findViewById(R.id.ble_tv_log)
         btnToggle = findViewById(R.id.ble_btn_toggle)
 
         btnToggle.setOnClickListener { toggleAdvertising() }
@@ -56,6 +62,11 @@ class BlePagerActivity : AppCompatActivity() {
             sendCode(ConsumerPeripheral.CONSUMER_PLAY_PAUSE, getString(R.string.ble_label_play_pause))
         }
         findViewById<MaterialButton>(R.id.ble_btn_repair).setOnClickListener { rePair() }
+        findViewById<MaterialButton>(R.id.ble_btn_copy_log).setOnClickListener { copyLog() }
+        findViewById<MaterialButton>(R.id.ble_btn_clear_log).setOnClickListener {
+            BleDiagnostics.clear()
+            refreshUi()
+        }
     }
 
     override fun onResume() {
@@ -135,8 +146,9 @@ class BlePagerActivity : AppCompatActivity() {
         val device = BlePagerService.lastDevice
         if (device != null) {
             try {
-                device.createBond()
-                Toast.makeText(this, getString(R.string.ble_toast_repair, device.address ?: ""), Toast.LENGTH_LONG).show()
+                // peripheral 侧 createBond 仅作辅助；主要靠主机发起加密连接触发 Just Works
+                val ok = try { device.createBond() } catch (_: Throwable) { false }
+                Toast.makeText(this, getString(R.string.ble_toast_repair, device.address ?: "") + " (ok=$ok)", Toast.LENGTH_LONG).show()
             } catch (e: SecurityException) {
                 Toast.makeText(this, getString(R.string.ble_toast_no_pair_perm, e.message ?: ""), Toast.LENGTH_LONG).show()
             }
@@ -158,10 +170,35 @@ class BlePagerActivity : AppCompatActivity() {
         Toast.makeText(this, R.string.ble_toast_no_device, Toast.LENGTH_LONG).show()
     }
 
+    private fun copyLog() {
+        val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+        val text = BleDiagnostics.snapshot()
+        clipboard?.setPrimaryClip(ClipData.newPlainText("BLE诊断", text))
+        Toast.makeText(this, "已复制到剪贴板", Toast.LENGTH_SHORT).show()
+    }
+
     private fun refreshUi() {
         val advertising = BlePagerService.peripheral != null
         btnToggle.text = getString(if (advertising) R.string.ble_btn_stop else R.string.ble_btn_start)
         tvStatus.text = BlePagerService.status
+
+        // 诊断摘要
+        val d = BleDiagnostics
+        tvDiagSummary.text = buildString {
+            appendLine("广播: ${d.advertisingState}")
+            appendLine("连接: ${d.connectionState}" +
+                if (d.lastConnectionStatus >= 0) " (0x${Integer.toHexString(d.lastConnectionStatus)})" else "")
+            appendLine("远端: ${d.lastRemoteAddress}")
+            append("Bond: ${d.bondState} | CCCD: ${if (d.cccdSubscribed) "已订阅" else "未订阅"}")
+        }
+
+        // 日志（取最近 20 条显示）
+        val snapshot = BleDiagnostics.snapshot()
+        tvLog.text = snapshot
+        // 自动滚动到底部
+        findViewById<ScrollView>(R.id.ble_scroll_root)?.post {
+            findViewById<ScrollView>(R.id.ble_scroll_root)?.fullScroll(ScrollView.FOCUS_DOWN)
+        }
     }
 
     companion object {

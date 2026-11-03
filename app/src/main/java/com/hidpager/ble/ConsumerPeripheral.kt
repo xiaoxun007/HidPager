@@ -5,8 +5,14 @@ import android.util.Log
 
 /**
  * BLE Consumer Control (page turner) peripheral. Port of validated ConsumerPeripheral.java.
- * 16-bit little-endian report on Usage Page 0x0C (Consumer Control):
- *   0xE9 Volume Increment -> 上一页, 0xEA Volume Decrement -> 下一页, 0xCD Play/Pause.
+ *
+ * Report Map 与载荷长度对齐（修复 A）：
+ *   - Report ID = 1（与 Report Reference 描述符一致，修复 B）
+ *   - Report Size = 16 bit，Report Count = 1 → 单次报告 2 字节
+ *   - notify 载荷就是 2 字节小端消费控制码
+ *
+ * Usage Page 0x0C (Consumer)，Usage Min/Max 覆盖 0x000–0x3FF：
+ *   0xE9 Volume Increment -> 上一页, 0xEA Volume Decrement -> 下一页, 0xCD Play/Pause。
  */
 class ConsumerPeripheral(context: Context) :
     HidPeripheral(context.applicationContext, needInputReport = true, needOutputReport = false, needFeatureReport = false, dataSendingRate = 20) {
@@ -21,20 +27,20 @@ class ConsumerPeripheral(context: Context) :
         usagePageItem(1), 0x0C.toByte(),                          // Usage Page (Consumer)
         usageItem(1), 0x01.toByte(),                              // Usage (Consumer Control)
         collectionItem(1), 0x01.toByte(),                         // Collection (Application)
-        logicalMinimumItem(1), 0x00.toByte(),                    // Logical Minimum (0)
-        logicalMaximumItem(2), 0xFF.toByte(), 0x03.toByte(),     // Logical Maximum (1023)
+        reportIdItem(1), 0x01.toByte(),                           // Report ID (1) — 与 0x2908 一致
+        logicalMinimumItem(1), 0x00.toByte(),                     // Logical Minimum (0)
+        logicalMaximumItem(2), 0xFF.toByte(), 0x03.toByte(),      // Logical Maximum (1023)
+        usageMinimumItem(1), 0x00.toByte(),                       // Usage Minimum (0)
+        usageMaximumItem(2), 0xFF.toByte(), 0x03.toByte(),        // Usage Maximum (1023)
         reportSizeItem(1), 0x10.toByte(),                         // Report Size (16)
-        reportCountItem(1), 0x01.toByte(),                        // Report Count (1)
-        usageItem(1), 0xE9.toByte(),                              // Usage (Increment)
-        usageItem(1), 0xEA.toByte(),                              // Usage (Decrement)
-        usageItem(1), 0xCD.toByte(),                              // Usage (Play/Pause)
+        reportCountItem(1), 0x01.toByte(),                        // Report Count (1) → 2 字节报告
         inputItem(1), 0x00.toByte(),                              // Input (Data,Array,Abs)
         endCollectionItem(0),                                     // End Collection
     )
 
     /** Send a Consumer Control code as a short press: down [code,00] then release [00,00]. */
     fun sendConsumerPress(code: Int) {
-        val down = byteArrayOf((code and 0xff).toByte(), 0x00) // little-endian
+        val down = byteArrayOf((code and 0xff).toByte(), 0x00) // little-endian, 2 字节
         val up = byteArrayOf(0x00, 0x00)
         addInputReport(down)
         addInputReport(up)

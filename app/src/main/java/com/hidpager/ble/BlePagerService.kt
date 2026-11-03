@@ -138,10 +138,12 @@ class BlePagerService : Service() {
     private fun stopPeripheral() {
         consumer?.let {
             it.stopAdvertising()
+            it.release()
         }
         consumer = null
         peripheral = null
         status = "未广播"
+        BleDiagnostics.setAdvertising("已停止")
     }
 
     override fun onDestroy() {
